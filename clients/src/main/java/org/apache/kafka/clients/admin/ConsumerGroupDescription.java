@@ -38,15 +38,24 @@ public class ConsumerGroupDescription {
     private final String partitionAssignor;
     private final ConsumerGroupState state;
     private final Node coordinator;
-    private Set<AclOperation> authorizedOperations;
+    private final Set<AclOperation> authorizedOperations;
 
     public ConsumerGroupDescription(String groupId,
                                     boolean isSimpleConsumerGroup,
                                     Collection<MemberDescription> members,
                                     String partitionAssignor,
                                     ConsumerGroupState state,
-                                    Node coordinator,
-                                    Set<AclOperation> authorizedOperations) {
+                                    Node coordinator) {
+        this(groupId, isSimpleConsumerGroup, members, partitionAssignor, state, coordinator, Collections.emptySet());
+    }
+
+    ConsumerGroupDescription(String groupId,
+                             boolean isSimpleConsumerGroup,
+                             Collection<MemberDescription> members,
+                             String partitionAssignor,
+                             ConsumerGroupState state,
+                             Node coordinator,
+                             Set<AclOperation> authorizedOperations) {
         this.groupId = groupId == null ? "" : groupId;
         this.isSimpleConsumerGroup = isSimpleConsumerGroup;
         this.members = members == null ? Collections.emptyList() :
@@ -119,7 +128,7 @@ public class ConsumerGroupDescription {
     }
 
     /**
-     * authorizedOperations for this group
+     * authorizedOperations for this group, or null if that information is not known.
      */
     public  Set<AclOperation> authorizedOperations() {
         return authorizedOperations;

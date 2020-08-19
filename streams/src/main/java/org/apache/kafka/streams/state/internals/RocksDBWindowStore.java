@@ -48,6 +48,7 @@ public class RocksDBWindowStore
         super.init(context, root);
     }
 
+    @Deprecated
     @Override
     public void put(final Bytes key, final byte[] value) {
         put(key, value, context.timestamp());
@@ -55,28 +56,27 @@ public class RocksDBWindowStore
 
     @Override
     public void put(final Bytes key, final byte[] value, final long windowStartTimestamp) {
-        maybeUpdateSeqnumForDups();
-
-        wrapped().put(WindowKeySchema.toStoreKeyBinary(key, windowStartTimestamp, seqnum), value);
+        // Skip if value is null and duplicates are allowed since this delete is a no-op
+        if (!(value == null && retainDuplicates)) {
+            maybeUpdateSeqnumForDups();
+            wrapped().put(WindowKeySchema.toStoreKeyBinary(key, windowStartTimestamp, seqnum), value);
+        }
     }
 
     @Override
     public byte[] fetch(final Bytes key, final long timestamp) {
         final byte[] bytesValue = wrapped().get(WindowKeySchema.toStoreKeyBinary(key, timestamp, seqnum));
-        if (bytesValue == null) {
-            return null;
-        }
         return bytesValue;
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("deprecation") // note, this method must be kept if super#fetch(...) is removed
     @Override
     public WindowStoreIterator<byte[]> fetch(final Bytes key, final long timeFrom, final long timeTo) {
         final KeyValueIterator<Bytes, byte[]> bytesIterator = wrapped().fetch(key, timeFrom, timeTo);
         return new WindowStoreIteratorWrapper(bytesIterator, windowSize).valuesIterator();
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("deprecation") // note, this method must be kept if super#fetch(...) is removed
     @Override
     public KeyValueIterator<Windowed<Bytes>, byte[]> fetch(final Bytes from,
                                                            final Bytes to,
@@ -92,7 +92,7 @@ public class RocksDBWindowStore
         return new WindowStoreIteratorWrapper(bytesIterator, windowSize).keyValueIterator();
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("deprecation") // note, this method must be kept if super#fetchAll(...) is removed
     @Override
     public KeyValueIterator<Windowed<Bytes>, byte[]> fetchAll(final long timeFrom, final long timeTo) {
         final KeyValueIterator<Bytes, byte[]> bytesIterator = wrapped().fetchAll(timeFrom, timeTo);
